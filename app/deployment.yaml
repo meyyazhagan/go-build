@@ -1,0 +1,40 @@
+--- 
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  labels: 
+    app: go-app
+  name: go-app-deployment
+spec: 
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: go-app
+  template: 
+    metadata: 
+      labels: 
+        app: go-app
+    spec: 
+      containers: 
+      - image: "nanab4u/testimage-app:0.0"
+        name: web
+        ports: 
+          - containerPort: 8080
+        env:
+        - name: ERVCP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: go-configmap
+              key: host
+        - name: ERVCP_DB_PW
+          valueFrom:
+            secretKeyRef:
+              name: rediscreds
+              key: pass
+        - name: ERVCP_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: go-configmap
+              key: port
+      imagePullSecrets: 
+        - name: myregistrykey

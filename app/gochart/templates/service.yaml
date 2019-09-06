@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gochart.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "gochart.name" . }}
+    helm.sh/chart: {{ include "gochart.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: {{ include "gochart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
