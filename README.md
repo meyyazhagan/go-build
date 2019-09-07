@@ -1,4 +1,4 @@
-# CI/CD Pipeline for Go application
+# CI/CD Pipeline for Ataccama Go application
 
 Hello! If you're reading this, you've applied to work with us as a DevOps Engineer. That's great!
 As a first round of our hiring process, we want to see your technical ability. Please, read this README carefully, as it contains everything that you neeed to complete the task.
