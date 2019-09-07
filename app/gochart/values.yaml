@@ -12,7 +12,7 @@ secret:
 
 image:
   repository: nanab4u/testimage-app
-  tag: "0.0"
+  tag: __BUILDTAG__
   pullPolicy: Always
 
 nameOverride: ""
