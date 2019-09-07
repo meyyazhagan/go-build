@@ -1,0 +1,67 @@
+pipeline {
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+  }
+  triggers {
+      pollSCM 'H/1 * * * *'
+  }
+  agent {
+    kubernetes {
+      defaultContainer 'jnlp'
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    agent: jenkins-agents
+spec:
+  containers:
+  - name: docker
+    image: docker:18.09
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: test-volume
+  - name: helm
+    image: dtzar/helm-kubectl:2.14.3
+    command:
+    - cat
+    tty: true
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /var/run/docker.sock
+"""
+    }
+  }
+  stages {
+      stage('Prepare and Build') {
+         steps {
+                script {
+                    properties([pipelineTriggers([pollSCM('H/1 * * * *')])])
+                }
+                git branch: "helm", url: 'https://github.com/nanab4u/go-build.git'
+                container('docker') {
+                    withDockerRegistry(registry: [credentialsId: 'docker_hub_creds']) {
+                        sh "docker build -t nanab4u/testimage-app:helm-${env.BUILD_ID} ./app/"
+                        sh "docker push nanab4u/testimage-app:helm-${env.BUILD_ID}"
+                    }
+                }
+                container('helm') {
+                    sh "sed -i s/__BUILDTAG__/helm-${env.BUILD_ID}/g ./app/gochart/values.yaml"
+                    sh 'helm upgrade goapp ./app/gochart/ --install'
+                }
+         }
+	  }
+	  //stage('Helm Deploy') {
+	  //  steps {
+	  //	        container('helm') {
+	  //	                           sh "ls -lrth"
+	  //	                           sh "cat ./app/"
+	  //	        }  
+      //    }
+      //}
+  }
+}
