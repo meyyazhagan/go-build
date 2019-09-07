@@ -1,32 +1,37 @@
-# CI/CD Pipeline for Ataccama Go application
+# CI/CD Pipeline for Go application
 
-Hello! If you're reading this, you've applied to work with us as a DevOps Engineer. That's great!
-As a first round of our hiring process, we want to see your technical ability. Please, read this README carefully, as it contains everything that you neeed to complete the task.
+Hello! Here is the CI/CD pipeline for Go application 
 
-## Goal
+## The Plan
 
-This repository contains a little Golang application in `app` folder. You need to set up a complete end-to-end CI/CD pipeline, that will build & deploy an application on every commit to `master` branch.
+The plan is to create CI/CD using Jenkins(Declarative pipeline) and deploy the Go application in local kubernetes cluster with Helm as a package manager.
 
-You can read more about the application and it's dependencies in `app/README.md` file.
+Tools Picked:
 
-Please, clone this repo to your public GitHub, GitLab, BitBucket or other git service and go on from there. After you're done, please send us link to your repository.
+* CI/CD - Jenkins
 
-You can use any open-source tools to implement this CI/CD pipeline, as well as any way to package and run the application. If you'd like to have a VM or two to work on - shoot us an email, we'll deploy two instances in AWS for you.
+* Containerization - Docker
 
-## Evaluation criteria
+* Container Orchestration - Kubernetes
 
-The main evaluation criteria is that the CI/CD pipeline works. Application has to run somewhere and be accessible via web browser. When a change in `master` branch of repository occurs, it should automatically propagate to application.
+* Package Manager - Helm
 
-Apart from that we will evaluate:
-* tools that you've picked
-* correct usage of said tools
-* code readability
-* solution flexibility & extensibility
+## Summary
+
+I have created a kubernetes cluster in my local environment using minikube and as a first step deployed jenkins and redis containers using Helm charts.
+
+Here are the details for the same:
+
+* Used the stable/jenkins charts from here(https://github.com/helm/charts/tree/master/stable/jenkins) with the values from ./app/jenkins-values.yaml
+
+* Used the stable/redis charts from here(https://github.com/helm/charts/tree/master/stable/redis) with the app version of 5.0.5
+
+We primarily used Jenkins Kubernetes Plugin(https://github.com/jenkinsci/kubernetes-plugin) to run dynamic agents in a Kubernetes/Docker environment. Once the build is triggered it dynamically creates the agents(In our case jnlp, docker and helm containers in K8 Pod)and do the docker and helming stuffs and throw the agents away. Jenkins declarative pipeline is available here: ./app/Jenkinsfile and it has all the information about dynamic agents and build and deployment stages for this pipeline. We also used pollSCM instead of webhook because this scenario is experimented in the local notebook environment. But as always webhooks must be prefferd over pollSCM.
+
+Redis credentials are copied as kubernetes secrets and it is consumed by the Go application.
+
+Please check the ./app/README.md to know more about Dockerization and Helming for the Go application.
 
 ## To sum up
 
-This task is loosely-defined on purpose. With DevOps being a set of practices at best and a buzzword at worst, we want to leave you some creative freedom in how you approach this task. There is no wrong solution, apart from a solution that outright doesn't work, so don't worry about it.
-
-Good luck, and hope to hear back from you soon!
-
-_Ataccama Cloud Solutions team_
+This task is purely done for local environment. So we can do some enhancements like Kubernetes RBAC setup, push/pull the Helm Charts to/from private chart repository(chart museum) and etc.
