@@ -37,31 +37,38 @@ spec:
     }
   }
   stages {
-      stage('Prepare and Build') {
-         steps {
-                script {
-                    properties([pipelineTriggers([pollSCM('H/1 * * * *')])])
-                }
-                git branch: "helm", url: 'https://github.com/nanab4u/go-build.git'
-                container('docker') {
-                    withDockerRegistry(registry: [credentialsId: 'docker_hub_creds']) {
-                        sh "docker build -t nanab4u/testimage-app:helm-${env.BUILD_ID} ./app/"
-                        sh "docker push nanab4u/testimage-app:helm-${env.BUILD_ID}"
-                    }
-                }
-                container('helm') {
-                    sh "sed -i s/__BUILDTAG__/helm-${env.BUILD_ID}/g ./app/gochart/values.yaml"
-                    sh 'helm upgrade goapp ./app/gochart/ --install'
-                }
-         }
-	  }
-	  //stage('Helm Deploy') {
-	  //  steps {
-	  //	        container('helm') {
-	  //	                           sh "ls -lrth"
-	  //	                           sh "cat ./app/"
-	  //	        }  
-      //    }
-      //}
+    // Enhancements: Here we can add a notification stage to notify to Slack or wherever that the build has been started
+    stage('Build') {
+      steps {
+        git branch: "master", url: 'https://github.com/nanab4u/go-build.git'
+		// Enhancements: Here we can add static code analysis(SonarGo is one of the example) to ensure code adheres to industry standards
+        container('docker') {
+          withDockerRegistry(registry: [credentialsId: 'docker_hub_creds']) {
+		    // Enhancements: We can also add unit testing while building the docker image and store the results in artifacts.
+            sh "docker build -t nanab4u/testimage-app:master-${env.BUILD_ID} ./app/"
+            sh "docker push nanab4u/testimage-app:master-${env.BUILD_ID}"
+          }
+        }
+      }
+	}
+    stage('Update & Validate Helm Charts') {
+      steps {
+        container('helm') {
+          sh "sed -i s/__BUILDTAG__/master-${env.BUILD_ID}/g ./app/gochart/values.yaml"
+          sh "sed -i s/__BUILDVERSION__/0.0.${env.BUILD_ID}/g ./app/gochart/Chart.yaml"
+          sh 'helm lint ./app/gochart'
+        }
+      }
+    }
+	// Enhancements: Helm charts can be pushed to chart museum and we can fetch it from there and deploy it to K8 clusters.
+    stage('Deploy') {
+      steps {
+        container('helm') {
+          sh 'helm upgrade goapp ./app/gochart/ --install'
+        }
+      }
+    }
+	// Enhancements: Here we can verify the deployment with regression/performance testing,dynamic code analysis and rollback the release if it is required. This stage can be added here
+	// Enhancements: Post build and deployment success/failure stage can be added here
   }
 }
